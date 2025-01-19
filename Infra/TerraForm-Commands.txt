@@ -1,0 +1,15 @@
+--- Terraform alias
+alias tf=terraform
+
+--- Terraform initialization
+terraform init
+
+--- Terraform Plan before apply
+terraform plan -var-file=nonprod.tfvars
+
+--- Terraform apply to create resources on Cloud (Azure Portal)
+terraform apply -var-file=nonprod.tfvars [-auto-approve  this is only for CICD pipeline]
+
+--- Terraform destroy to delete resources on Cloud (Azure Portal)
+terraform destroy -var-file=nonprod.tfvars [-auto-approve  this is only for CICD pipeline]
+
