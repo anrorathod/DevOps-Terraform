@@ -1,0 +1,72 @@
+{
+  "variables": {
+    "ssh_user": "admin",
+    "ssh_pass": "admin",
+    "mgd_image": "agentpool-np-packerimage",
+    "rg": "packer-vm-rg",
+    "subscription_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "image_ver": "1.0.0",
+    "container_registry" : "demodevacr"
+  },
+  "builders": [
+    {
+      "type": "azure-arm",
+      "client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "client_secret": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "tenant_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "subscription_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      "build_resource_group_name": "packer-vm-rg",
+       
+      "managed_image_name" : "agentpool-np-packerimage",
+      "managed_image_resource_group_name" : "packer-vm-rg",
+      "managed_image_zone_resilient": "true", 
+      "os_type": "Linux",
+      "image_publisher": "Canonical",
+      "image_offer": "UbuntuServer",
+      "image_sku": "18.04-LTS",
+      "azure_tags": {
+        "Managed-By": "DevOps",
+        "Provisioned-By": "Packer",
+        "Project": "DemoApp",
+        "Business-Owner": "Dev"
+      },
+      "vm_size": "Standard_B2s" 
+    }
+  ],
+  "provisioners": [
+    {
+      "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'",
+        "inline": [
+          "apt-get update",
+          "apt-get upgrade -y",
+          "apt-get -y install curl wget zip unzip p7zip p7zip-full p7zip-rar jq default-jre make ant ant-optional gpg",
+          "curl -sL https://get.docker.com | sh",
+          "curl -sL https://raw.githubusercontent.com/actions/virtual-environments/b665bad57bcd15dfcdb4d951e164a0f9cc67e36f/images/linux/scripts/installers/docker-compose.sh | sh",
+          "curl -sL https://raw.githubusercontent.com/actions/virtual-environments/cb93e86daf5d16554536d5fad7217928239700f1/images/linux/scripts/installers/git.sh | sh",
+          "curl -sL https://raw.githubusercontent.com/actions/virtual-environments/7c1956be8a89fcecb122f8f11d893ccd5a342e8f/images/linux/scripts/installers/kubernetes-tools.sh | sh",
+          "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash",
+          "curl -sL https://raw.githubusercontent.com/actions/virtual-environments/05fc867e8a695283dc6d8cf5d5ece17641ec4b0d/images/linux/scripts/installers/terraform.sh | sh",
+          "curl -sL https://raw.githubusercontent.com/actions/virtual-environments/836dd6f083dab69b7dd9a4935e02866c6d0c530d/images/linux/scripts/installers/nodejs.sh | sh",          
+          "wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb",
+          "dpkg -i packages-microsoft-prod.deb",
+          "apt-get update",
+          "apt-get install -y apt-transport-https && apt-get update && apt-get install -y dotnet-sdk-3.1 dotnet-sdk-2.1 dotnet-sdk-5.0 dotnet-sdk-6.0 dotnet-sdk-7.0 dotnet-sdk-8.0",
+          "curl -fsSL https://apt.releases.hashicorp.com/gpg | apt-key add -",
+          "apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\"",
+          "apt-get update && apt-get install packer",          
+          "curl -sL https://www-eu.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip -o maven.zip",
+          "unzip -d /usr/share maven.zip",
+          "rm maven.zip",
+          "ln -s /usr/share/apache-maven-3.6.3/bin/mvn /usr/bin/mvn",
+          "sudo setfacl --modify user:$USER:rw /var/run/docker.sock",
+          "curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b /usr/local/bin",
+          "docker run -d -p 9000:9000 mc1arke/sonarqube-with-community-branch-plugin",
+          "az login --identity",
+          "az acr login --name  {{user `container_registry`}}",
+          "/usr/sbin/waagent -force -deprovision+user && export HISTSIZE=0 && sync"     
+      ],
+      "inline_shebang": "/bin/sh -x",
+      "type": "shell"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-set -x 
+set -x
+workspace=dev
 subscription_id="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 az account set -s $subscription_id
